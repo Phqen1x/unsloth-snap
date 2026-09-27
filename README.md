@@ -1,6 +1,6 @@
 # Unsloth Snap
 
-Snap packaging for the [Unsloth](https://unsloth.ai/) Desktop App (`unsloth`).
+Snap packaging for the [Unsloth](https://unsloth.ai/) Desktop App (`unsloth-desktop`).
 
 Unsloth is a platform for fast and memory-efficient fine-tuning, training, quantization, and local inference of Large Language Models (LLMs).
 
@@ -9,7 +9,7 @@ Unsloth is a platform for fast and memory-efficient fine-tuning, training, quant
 Install from the Snap Store:
 
 ```bash
-sudo snap install unsloth
+sudo snap install unsloth-desktop
 ```
 
 ### Recommended Interface Connections
@@ -18,12 +18,12 @@ To enable full hardware introspection (GPU detection and system monitoring), con
 
 ```bash
 # Hardware and system monitoring for GPU and CPU metrics
-sudo snap connect unsloth:hardware-observe
-sudo snap connect unsloth:system-observe
-sudo snap connect unsloth:process-control
+sudo snap connect unsloth-desktop:hardware-observe
+sudo snap connect unsloth-desktop:system-observe
+sudo snap connect unsloth-desktop:process-control
 
 # Access training datasets or models on external / removable drives
-sudo snap connect unsloth:removable-media
+sudo snap connect unsloth-desktop:removable-media
 ```
 
 *Note: GPU access via `opengl` (providing NVIDIA CUDA runtime access and AMD ROCm `/dev/kfd` / `/dev/dri`) is auto-connected.*
@@ -51,7 +51,7 @@ snapcraft
 Install the locally built snap:
 
 ```bash
-sudo snap install --dangerous unsloth_*.snap
+sudo snap install --dangerous unsloth-desktop_*.snap
 ```
 
 ## Details & Environment
@@ -59,4 +59,4 @@ sudo snap install --dangerous unsloth_*.snap
 - **Base**: `core24` (Ubuntu 24.04 LTS)
 - **Confinement**: `strict`
 - **Extensions**: `gnome` (GNOME 46 platform runtime + WebKitGTK 4.1 layout bindings)
-- **Persistent Data**: App state, managed environments, virtual environments, and Hugging Face model caches are stored under `$SNAP_USER_COMMON` (`~/snap/unsloth/common`) to persist across snap revisions without duplicate copying.
+- **Persistent Data**: App state, managed environments, virtual environments, and Hugging Face model caches are stored under `$SNAP_USER_COMMON` (`~/snap/unsloth-desktop/common`) to persist across snap revisions without duplicate copying.

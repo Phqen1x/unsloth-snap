@@ -1,13 +1,16 @@
-name: unsloth
+name: unsloth-desktop
 base: core24
 version: '0.1.815-beta'
-title: Unsloth
+title: Unsloth Desktop
 summary: Desktop client for Unsloth AI fine-tuning and inference
 description: |
   Unsloth is a fast and memory-efficient platform for fine-tuning and running
   Large Language Models (LLMs) locally. Unsloth Studio provides an intuitive
   desktop interface to train, evaluate, quantize, and export models with
   support for NVIDIA (CUDA) and AMD (ROCm) GPUs.
+
+  This snap is maintained unofficially. The maintainer has no affiliation
+  with Unsloth.
 website: https://unsloth.ai/
 issues: https://github.com/phqen1x/unsloth-snap/issues
 contact: https://github.com/phqen1x/unsloth-snap/issues
@@ -45,13 +48,13 @@ parts:
 
       # Rename and customize desktop file
       mv "$CRAFT_PART_INSTALL/usr/share/applications/Unsloth.desktop" \
-         "$CRAFT_PART_INSTALL/usr/share/applications/unsloth.desktop"
-      sed -i 's|^Exec=.*|Exec=unsloth %u|' \
-         "$CRAFT_PART_INSTALL/usr/share/applications/unsloth.desktop"
+         "$CRAFT_PART_INSTALL/usr/share/applications/unsloth-desktop.desktop"
+      sed -i 's|^Exec=.*|Exec=unsloth-desktop %u|' \
+         "$CRAFT_PART_INSTALL/usr/share/applications/unsloth-desktop.desktop"
       sed -i 's|^Icon=.*|Icon=${SNAP}/usr/share/icons/hicolor/128x128/apps/unsloth-studio.png|' \
-         "$CRAFT_PART_INSTALL/usr/share/applications/unsloth.desktop"
+         "$CRAFT_PART_INSTALL/usr/share/applications/unsloth-desktop.desktop"
       sed -i 's|^Categories=.*|Categories=Development;Science;ArtificialIntelligence;|' \
-         "$CRAFT_PART_INSTALL/usr/share/applications/unsloth.desktop"
+         "$CRAFT_PART_INSTALL/usr/share/applications/unsloth-desktop.desktop"
 
       # Ensure install.sh is executable
       chmod +x "$CRAFT_PART_INSTALL/usr/lib/Unsloth/install.sh"
@@ -90,12 +93,35 @@ parts:
       gcc -shared -fPIC -O2 -o "$CRAFT_PART_INSTALL/usr/lib/libsnap-affinity-wrapper.so" affinity-wrapper.c -ldl
 
 apps:
+  unsloth-desktop:
+    command: usr/bin/unsloth-studio
+    extensions: [gnome]
+    command-chain:
+      - bin/launcher
+    desktop: usr/share/applications/unsloth-desktop.desktop
+    environment:
+      HOME: $SNAP_USER_COMMON
+      GIT_EXEC_PATH: $SNAP/usr/lib/git-core
+      GIT_TEMPLATE_DIR: $SNAP/usr/share/git-core/templates
+    plugs:
+      - accel
+      - audio-playback
+      - browser-support
+      - home
+      - network
+      - network-bind
+      - network-status
+      - opengl
+      - hardware-observe
+      - system-observe
+      - process-control
+      - removable-media
+      - shmem
   unsloth:
     command: usr/bin/unsloth-studio
     extensions: [gnome]
     command-chain:
       - bin/launcher
-    desktop: usr/share/applications/unsloth.desktop
     environment:
       HOME: $SNAP_USER_COMMON
       GIT_EXEC_PATH: $SNAP/usr/lib/git-core

@@ -48,7 +48,7 @@ jobs:
         run: |
           VERSION=$(curl -sf \
             -H "Snap-Device-Series: 16" \
-            "https://api.snapcraft.io/v2/snaps/info/unsloth" \
+            "https://api.snapcraft.io/v2/snaps/info/unsloth-desktop" \
             | jq -r '.["channel-map"][] | select(.channel.name == "latest/edge") | .version // empty' | head -1)
           echo "version=${VERSION:-none}" >> "$GITHUB_OUTPUT"
           echo "Edge channel version: ${VERSION:-none}"
@@ -106,4 +106,4 @@ jobs:
           body: |
             Unsloth Desktop **${{ needs.check-version.outputs.deb_version }}** has been published to the `edge` channel on the Snap Store.
 
-            Review the upstream changes and promote to stable when ready via the [Snap Store dashboard](https://snapcraft.io/unsloth/releases).
+            Review the upstream changes and promote to stable when ready via the [Snap Store dashboard](https://snapcraft.io/unsloth-desktop/releases).
