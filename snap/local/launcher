@@ -42,6 +42,13 @@ fi
 # Ensure host driver libraries (like NVIDIA CUDA / libcuda.so.1) and system libs are discoverable
 export LD_LIBRARY_PATH="/var/lib/snapd/lib/gl:/usr/lib/${arch_triplet}:/lib/${arch_triplet}:${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
+# Preload affinity wrapper to prevent ROCm / PyTorch crash on restricted sched_setaffinity
+if [ -f "$SNAP/usr/lib/libsnap-affinity-wrapper.so" ]; then
+    export LD_PRELOAD="$SNAP/usr/lib/libsnap-affinity-wrapper.so${LD_PRELOAD:+:$LD_PRELOAD}"
+elif [ -f "$SNAP/usr/lib/$arch_triplet/libsnap-affinity-wrapper.so" ]; then
+    export LD_PRELOAD="$SNAP/usr/lib/$arch_triplet/libsnap-affinity-wrapper.so${LD_PRELOAD:+:$LD_PRELOAD}"
+fi
+
 # Prevent GNOME extension's host Python 3.12 PYTHONPATH from contaminating
 # Unsloth's managed Python 3.13 virtual environment (avoids SRE module mismatch errors)
 unset PYTHONPATH

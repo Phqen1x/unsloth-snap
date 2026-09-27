@@ -77,11 +77,17 @@ parts:
       chmod +x "$CRAFT_PART_INSTALL/usr/bin/uv" "$CRAFT_PART_INSTALL/usr/bin/uvx"
 
   launcher:
-    plugin: dump
+    plugin: nil
     source: snap/local
-    organize:
-      launcher: bin/launcher
-      xdg-open: bin/xdg-open
+    build-packages:
+      - gcc
+      - libc6-dev
+    override-build: |
+      mkdir -p "$CRAFT_PART_INSTALL/bin" "$CRAFT_PART_INSTALL/usr/lib"
+      cp launcher "$CRAFT_PART_INSTALL/bin/launcher"
+      cp xdg-open "$CRAFT_PART_INSTALL/bin/xdg-open"
+      chmod +x "$CRAFT_PART_INSTALL/bin/launcher" "$CRAFT_PART_INSTALL/bin/xdg-open"
+      gcc -shared -fPIC -O2 -o "$CRAFT_PART_INSTALL/usr/lib/libsnap-affinity-wrapper.so" affinity-wrapper.c -ldl
 
 apps:
   unsloth:
@@ -95,6 +101,7 @@ apps:
       GIT_EXEC_PATH: $SNAP/usr/lib/git-core
       GIT_TEMPLATE_DIR: $SNAP/usr/share/git-core/templates
     plugs:
+      - accel
       - audio-playback
       - browser-support
       - home
@@ -117,6 +124,7 @@ apps:
       GIT_EXEC_PATH: $SNAP/usr/lib/git-core
       GIT_TEMPLATE_DIR: $SNAP/usr/share/git-core/templates
     plugs:
+      - accel
       - audio-playback
       - browser-support
       - home
