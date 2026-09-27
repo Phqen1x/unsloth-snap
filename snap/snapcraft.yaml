@@ -61,6 +61,21 @@ parts:
         ln -sf libayatana-appindicator3.so.1 "$CRAFT_PART_INSTALL/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libappindicator3.so.1"
       fi
 
+  uv:
+    plugin: nil
+    override-build: |
+      case "$CRAFT_ARCH_BUILD_FOR" in
+        amd64) arch="x86_64-unknown-linux-gnu" ;;
+        arm64) arch="aarch64-unknown-linux-gnu" ;;
+        *) echo "Unsupported architecture: $CRAFT_ARCH_BUILD_FOR"; exit 1 ;;
+      esac
+      curl -fL -o uv.tar.gz "https://github.com/astral-sh/uv/releases/download/0.12.17/uv-${arch}.tar.gz"
+      tar -xzf uv.tar.gz
+      mkdir -p "$CRAFT_PART_INSTALL/usr/bin"
+      cp "uv-${arch}/uv" "$CRAFT_PART_INSTALL/usr/bin/"
+      cp "uv-${arch}/uvx" "$CRAFT_PART_INSTALL/usr/bin/"
+      chmod +x "$CRAFT_PART_INSTALL/usr/bin/uv" "$CRAFT_PART_INSTALL/usr/bin/uvx"
+
   launcher:
     plugin: dump
     source: snap/local
@@ -77,7 +92,6 @@ apps:
     desktop: usr/share/applications/unsloth.desktop
     environment:
       HOME: $SNAP_USER_COMMON
-      TMPDIR: $XDG_RUNTIME_DIR
     plugs:
       - audio-playback
       - browser-support
@@ -98,7 +112,6 @@ apps:
       - bin/launcher
     environment:
       HOME: $SNAP_USER_COMMON
-      TMPDIR: $XDG_RUNTIME_DIR
     plugs:
       - audio-playback
       - browser-support

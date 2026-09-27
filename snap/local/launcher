@@ -12,11 +12,24 @@ export WEBKIT_DMABUF_RENDERER_FORCE_SHM=1
 # xdg-desktop-portal Wayland activation token fallback
 export GTK_USE_PORTAL=0
 
-# Prefer snap-provided helpers like our xdg-open wrapper.
-export PATH="$SNAP/bin:$PATH"
+# Determine architecture triplet
+case "$SNAP_ARCH" in
+    amd64) arch_triplet="x86_64-linux-gnu" ;;
+    armhf) arch_triplet="arm-linux-gnueabihf" ;;
+    arm64) arch_triplet="aarch64-linux-gnu" ;;
+    ppc64el) arch_triplet="powerpc64le-linux-gnu" ;;
+    *) arch_triplet="$SNAP_ARCH-linux-gnu" ;;
+esac
 
-# Ensure host driver libraries (like NVIDIA CUDA / libcuda.so.1) are discoverable
-export LD_LIBRARY_PATH="/var/lib/snapd/lib/gl:${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+# Prefer snap-provided helpers like our xdg-open wrapper and bundled uv.
+export PATH="$SNAP/usr/bin:$SNAP/bin:$PATH"
+
+# Ensure host driver libraries (like NVIDIA CUDA / libcuda.so.1) and system libs are discoverable
+export LD_LIBRARY_PATH="/var/lib/snapd/lib/gl:/usr/lib/${arch_triplet}:/lib/${arch_triplet}:${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+
+# Prevent GNOME extension's host Python 3.12 PYTHONPATH from contaminating
+# Unsloth's managed Python 3.13 virtual environment (avoids SRE module mismatch errors)
+unset PYTHONPATH
 
 # Ensure Unsloth uses the user common directory for studio installation and caches
 export UNSLOTH_STUDIO_HOME="${UNSLOTH_STUDIO_HOME:-$SNAP_USER_COMMON/.unsloth/studio}"
@@ -39,19 +52,7 @@ mkdir -p "$XDG_DATA_HOME" "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME" "$XDG_STATE_HOME"
 gio_module_dir="${GIO_MODULE_DIR:-${XDG_CACHE_HOME:-$SNAP_USER_COMMON/.cache}/gio-modules}"
 
 if [ -n "${SNAP_DESKTOP_RUNTIME:-}" ]; then
-    if [ -n "${SNAP_LAUNCHER_ARCH_TRIPLET:-}" ]; then
-        gio_runtime_libdir="$SNAP_DESKTOP_RUNTIME/usr/lib/$SNAP_LAUNCHER_ARCH_TRIPLET"
-    else
-        case "$SNAP_ARCH" in
-            amd64) arch_triplet="x86_64-linux-gnu" ;;
-            armhf) arch_triplet="arm-linux-gnueabihf" ;;
-            arm64) arch_triplet="aarch64-linux-gnu" ;;
-            ppc64el) arch_triplet="powerpc64le-linux-gnu" ;;
-            *) arch_triplet="$SNAP_ARCH-linux-gnu" ;;
-        esac
-        gio_runtime_libdir="$SNAP_DESKTOP_RUNTIME/usr/lib/$arch_triplet"
-    fi
-
+    gio_runtime_libdir="$SNAP_DESKTOP_RUNTIME/usr/lib/$arch_triplet"
     gio_querymodules="$gio_runtime_libdir/glib-2.0/gio-querymodules"
     if [ -x "$gio_querymodules" ]; then
         if [ ! -f "$gio_module_dir/.snap-rev-$SNAP_REVISION" ] || [ ! -e "$gio_module_dir/libgiognutls.so" ]; then
