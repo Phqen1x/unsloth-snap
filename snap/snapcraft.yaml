@@ -61,13 +61,6 @@ parts:
         ln -sf libayatana-appindicator3.so.1 "$CRAFT_PART_INSTALL/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libappindicator3.so.1"
       fi
 
-      # Neuter the in-app deb updater — snapd manages snap updates, so
-      # pkexec deb installs are disabled under strict confinement.
-      bin="$CRAFT_PART_INSTALL/usr/bin/unsloth-studio"
-      old='https://github.com/unslothai/unsloth/releases/latest/download/latest.json'
-      grep -q "$old" "$bin" || { echo "updater endpoint not found"; exit 1; }
-      perl -0777 -pi -e 's{\Qhttps://github.com/unslothai/unsloth/releases/latest/download/latest.json\E}{httpx://github.com/unslothai/unsloth/releases/latest/download/latest.json}g' "$bin"
-
   launcher:
     plugin: dump
     source: snap/local
