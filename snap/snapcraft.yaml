@@ -92,6 +92,8 @@ apps:
     desktop: usr/share/applications/unsloth.desktop
     environment:
       HOME: $SNAP_USER_COMMON
+      GIT_EXEC_PATH: $SNAP/usr/lib/git-core
+      GIT_TEMPLATE_DIR: $SNAP/usr/share/git-core/templates
     plugs:
       - audio-playback
       - browser-support
@@ -112,6 +114,8 @@ apps:
       - bin/launcher
     environment:
       HOME: $SNAP_USER_COMMON
+      GIT_EXEC_PATH: $SNAP/usr/lib/git-core
+      GIT_TEMPLATE_DIR: $SNAP/usr/share/git-core/templates
     plugs:
       - audio-playback
       - browser-support

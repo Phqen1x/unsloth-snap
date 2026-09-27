@@ -21,8 +21,23 @@ case "$SNAP_ARCH" in
     *) arch_triplet="$SNAP_ARCH-linux-gnu" ;;
 esac
 
-# Prefer snap-provided helpers like our xdg-open wrapper and bundled uv.
-export PATH="$SNAP/usr/bin:$SNAP/bin:$PATH"
+# Prefer snap-provided helpers like our xdg-open wrapper, git-core, and bundled uv.
+export PATH="$SNAP/usr/lib/git-core:$SNAP/usr/bin:$SNAP/bin:$PATH"
+
+# Git environment for pip/uv VCS dependencies (e.g. triton kernels git+https)
+export GIT_EXEC_PATH="$SNAP/usr/lib/git-core"
+export GIT_TEMPLATE_DIR="$SNAP/usr/share/git-core/templates"
+
+# SSL certificate paths for Git, Python, and curl inside the snap
+if [ -f "/etc/ssl/certs/ca-certificates.crt" ]; then
+    export GIT_SSL_CAINFO="/etc/ssl/certs/ca-certificates.crt"
+    export SSL_CERT_FILE="/etc/ssl/certs/ca-certificates.crt"
+    export CURL_CA_BUNDLE="/etc/ssl/certs/ca-certificates.crt"
+elif [ -f "$SNAP/etc/ssl/certs/ca-certificates.crt" ]; then
+    export GIT_SSL_CAINFO="$SNAP/etc/ssl/certs/ca-certificates.crt"
+    export SSL_CERT_FILE="$SNAP/etc/ssl/certs/ca-certificates.crt"
+    export CURL_CA_BUNDLE="$SNAP/etc/ssl/certs/ca-certificates.crt"
+fi
 
 # Ensure host driver libraries (like NVIDIA CUDA / libcuda.so.1) and system libs are discoverable
 export LD_LIBRARY_PATH="/var/lib/snapd/lib/gl:/usr/lib/${arch_triplet}:/lib/${arch_triplet}:${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
