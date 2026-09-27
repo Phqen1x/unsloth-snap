@@ -1,0 +1,121 @@
+name: unsloth
+base: core24
+version: '0.1.815-beta'
+title: Unsloth
+summary: Desktop client for Unsloth AI fine-tuning and inference
+description: |
+  Unsloth is a fast and memory-efficient platform for fine-tuning and running
+  Large Language Models (LLMs) locally. Unsloth Studio provides an intuitive
+  desktop interface to train, evaluate, quantize, and export models with
+  support for NVIDIA (CUDA) and AMD (ROCm) GPUs.
+website: https://unsloth.ai/
+issues: https://github.com/phqen1x/unsloth-snap/issues
+contact: https://github.com/phqen1x/unsloth-snap/issues
+source-code: https://github.com/phqen1x/unsloth-snap
+license: AGPL-3.0-only
+grade: stable
+confinement: strict
+
+platforms:
+  amd64:
+    build-on: [amd64]
+    build-for: [amd64]
+
+plugs:
+  browser-support:
+    allow-sandbox: false
+  shmem:
+    interface: shared-memory
+    private: true
+
+parts:
+  unsloth-desktop:
+    plugin: dump
+    source: unsloth-desktop.deb
+    source-type: deb
+    stage-packages:
+      - zenity
+      - curl
+      - git
+      - ca-certificates
+      - libayatana-appindicator3-1
+      - libappindicator3-1
+    override-build: |
+      craftctl default
+
+      # Rename and customize desktop file
+      mv "$CRAFT_PART_INSTALL/usr/share/applications/Unsloth.desktop" \
+         "$CRAFT_PART_INSTALL/usr/share/applications/unsloth.desktop"
+      sed -i 's|^Exec=.*|Exec=unsloth %u|' \
+         "$CRAFT_PART_INSTALL/usr/share/applications/unsloth.desktop"
+      sed -i 's|^Icon=.*|Icon=${SNAP}/usr/share/icons/hicolor/128x128/apps/unsloth-studio.png|' \
+         "$CRAFT_PART_INSTALL/usr/share/applications/unsloth.desktop"
+      sed -i 's|^Categories=.*|Categories=Development;Science;ArtificialIntelligence;|' \
+         "$CRAFT_PART_INSTALL/usr/share/applications/unsloth.desktop"
+
+      # Ensure install.sh is executable
+      chmod +x "$CRAFT_PART_INSTALL/usr/lib/Unsloth/install.sh"
+
+      # Ensure libappindicator3.so.1 exists for system tray support
+      if [ ! -e "$CRAFT_PART_INSTALL/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libappindicator3.so.1" ] && [ -e "$CRAFT_PART_INSTALL/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libayatana-appindicator3.so.1" ]; then
+        ln -sf libayatana-appindicator3.so.1 "$CRAFT_PART_INSTALL/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libappindicator3.so.1"
+      fi
+
+      # Neuter the in-app deb updater — snapd manages snap updates, so
+      # pkexec deb installs are disabled under strict confinement.
+      bin="$CRAFT_PART_INSTALL/usr/bin/unsloth-studio"
+      old='https://github.com/unslothai/unsloth/releases/latest/download/latest.json'
+      grep -q "$old" "$bin" || { echo "updater endpoint not found"; exit 1; }
+      perl -0777 -pi -e 's{\Qhttps://github.com/unslothai/unsloth/releases/latest/download/latest.json\E}{httpx://github.com/unslothai/unsloth/releases/latest/download/latest.json}g' "$bin"
+
+  launcher:
+    plugin: dump
+    source: snap/local
+    organize:
+      launcher: bin/launcher
+      xdg-open: bin/xdg-open
+
+apps:
+  unsloth:
+    command: usr/bin/unsloth-studio
+    extensions: [gnome]
+    command-chain:
+      - bin/launcher
+    desktop: usr/share/applications/unsloth.desktop
+    environment:
+      HOME: $SNAP_USER_COMMON
+      TMPDIR: $XDG_RUNTIME_DIR
+    plugs:
+      - audio-playback
+      - browser-support
+      - home
+      - network
+      - network-bind
+      - network-status
+      - opengl
+      - hardware-observe
+      - system-observe
+      - process-control
+      - removable-media
+      - shmem
+  unsloth-studio:
+    command: usr/bin/unsloth-studio
+    extensions: [gnome]
+    command-chain:
+      - bin/launcher
+    environment:
+      HOME: $SNAP_USER_COMMON
+      TMPDIR: $XDG_RUNTIME_DIR
+    plugs:
+      - audio-playback
+      - browser-support
+      - home
+      - network
+      - network-bind
+      - network-status
+      - opengl
+      - hardware-observe
+      - system-observe
+      - process-control
+      - removable-media
+      - shmem
