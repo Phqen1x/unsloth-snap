@@ -9,8 +9,6 @@ export WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1
 # WebKitGTK DMABUF renderer SHM fallback for compatibility across GPU drivers
 export WEBKIT_DMABUF_RENDERER_FORCE_SHM=1
 
-# xdg-desktop-portal Wayland activation token fallback
-export GTK_USE_PORTAL=0
 
 # Determine architecture triplet
 case "$SNAP_ARCH" in
@@ -65,6 +63,70 @@ export XDG_STATE_HOME="$SNAP_USER_COMMON/.local/state"
 export GIO_MODULE_DIR="$XDG_CACHE_HOME/gio-modules"
 
 mkdir -p "$XDG_DATA_HOME" "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME" "$XDG_STATE_HOME" "$UNSLOTH_STUDIO_HOME" "$HF_HOME"
+
+# Ensure dconf database and desktop environment configs (GTK themes, fontconfig, etc.)
+# prepared by desktop-launch or host are available under XDG_CONFIG_HOME ($SNAP_USER_COMMON/.config).
+mkdir -p "$XDG_CONFIG_HOME/dconf"
+if [ -e "$SNAP_REAL_HOME/.config/dconf/user" ]; then
+    ln -sf "$SNAP_REAL_HOME/.config/dconf/user" "$XDG_CONFIG_HOME/dconf/user"
+elif [ -e "$SNAP_USER_DATA/.config/dconf/user" ]; then
+    ln -sf "$SNAP_USER_DATA/.config/dconf/user" "$XDG_CONFIG_HOME/dconf/user"
+fi
+
+for dir in fontconfig gtk-2.0 gtk-3.0 gtk-4.0 ibus; do
+    src_dir=""
+    if [ -d "$SNAP_USER_DATA/.config/$dir" ]; then
+        src_dir="$SNAP_USER_DATA/.config/$dir"
+    elif [ -d "$SNAP_REAL_HOME/.config/$dir" ]; then
+        src_dir="$SNAP_REAL_HOME/.config/$dir"
+    fi
+    if [ -n "$src_dir" ]; then
+        mkdir -p "$XDG_CONFIG_HOME/$dir"
+        for f in "$src_dir"/*; do
+            [ -e "$f" ] || [ -L "$f" ] || continue
+            fname="$(basename "$f")"
+            if [ ! -e "$XDG_CONFIG_HOME/$dir/$fname" ] && [ ! -L "$XDG_CONFIG_HOME/$dir/$fname" ]; then
+                ln -sf "$f" "$XDG_CONFIG_HOME/$dir/$fname"
+            fi
+        done
+    fi
+done
+
+# Synchronize dark mode preference into GTK settings fallback if not already set
+is_dark=0
+if command -v gsettings >/dev/null 2>&1; then
+    cs="$(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null | tr -d "'\"")"
+    if [ "$cs" = "prefer-dark" ]; then
+        is_dark=1
+    fi
+    if [ "$is_dark" -eq 0 ]; then
+        theme="$(gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null | tr -d "'\"")"
+        case "$theme" in
+            *[Dd]ark*) is_dark=1 ;;
+        esac
+    fi
+fi
+
+if [ "$is_dark" -eq 1 ]; then
+    for gtk_ver in gtk-3.0 gtk-4.0; do
+        ini="$XDG_CONFIG_HOME/$gtk_ver/settings.ini"
+        if [ ! -s "$ini" ]; then
+            rm -f "$ini"
+            mkdir -p "$XDG_CONFIG_HOME/$gtk_ver"
+            cat << 'EOF' > "$ini"
+[Settings]
+gtk-application-prefer-dark-theme = 1
+EOF
+        fi
+    done
+else
+    for gtk_ver in gtk-3.0 gtk-4.0; do
+        ini="$XDG_CONFIG_HOME/$gtk_ver/settings.ini"
+        if [ -f "$ini" ] && grep -q "gtk-application-prefer-dark-theme = 1" "$ini" && [ "$(wc -l < "$ini")" -le 3 ]; then
+            rm -f "$ini"
+        fi
+    done
+fi
 
 # Clear stale GIO module cache. The GNOME extension caches GIO modules to
 # $SNAP_USER_COMMON/.cache/gio-modules/ from the previous snap revision.
